@@ -1,0 +1,115 @@
+package XXXX;
+
+import java.io.IOException;  
+import java.sql.Array;
+import java.util.List;
+import java.util.ArrayList;
+
+import net.sf.json.*;
+
+import org.apache.http.Consts;
+import org.apache.http.HttpEntity;
+import org.apache.http.NameValuePair;
+import org.apache.http.ParseException;
+import org.apache.http.client.config.CookieSpecs;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;  
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
+import org.apache.http.client.entity.*;
+
+public class a {
+	/*访问百度天气接口，亲求参数有apikey，conn,conn-type.*/
+	
+
+
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+		String url="http://apis.baidu.com/heweather/weather/free";
+		String refer=null;
+		String cookie =null;
+		String apikey="43928312128bd6b1e94a6e28d8b09540";
+		String conn="application/x-www-form-urlencoded";
+		String conn_type="Keep-Alive";
+		String city="11";
+		CloseableHttpResponse resp= null;
+		/*设置请求报文列表*/
+		List<NameValuePair> nameValuePairs= new ArrayList<NameValuePair>();
+		nameValuePairs.add(new BasicNameValuePair("city",city));
+		
+		a httptest=new a();
+		try {
+			resp=httptest.doPost(url, nameValuePairs,apikey,conn,conn_type);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		JSONObject allinfo=(JSONObject) httptest.getJson(resp).getJSONArray("HeWeather data service 3.0").get(0);
+		System.out.println(allinfo);
+		JSONObject basic=(JSONObject)allinfo.getJSONObject("basic");
+		String citys=(String)basic.get("city");
+		System.out.println("查询"+citys+"市天气成功！");
+		if(citys.equals(null)){
+			System.out.println("请求失败！"+resp.getStatusLine());
+		}
+		else{
+			System.out.println("调用成功！"+resp.getStatusLine());
+		}
+	}
+	
+	public static CloseableHttpResponse doGet(String url,String cookie,String refer) throws IOException{
+		/*get标准请求*/
+		RequestConfig config = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD_STRICT).build();
+		CloseableHttpClient httpClient = HttpClients.custom().setDefaultRequestConfig(config).build();
+		HttpGet httpget=new HttpGet(url);
+		if(cookie!=null){
+			httpget.setHeader("Cookie",cookie);
+		}
+		if(refer!=null){
+			httpget.setHeader("Referer",refer);			
+		}
+		CloseableHttpResponse response= httpClient.execute(httpget);
+		return response;
+		
+		
+	}
+	
+	public static CloseableHttpResponse doPost(String url,List<NameValuePair> values,String apikey,String conn,String conn_type)throws IOException{
+		/*post标准请求*/
+		RequestConfig config = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD_STRICT).build();
+		CloseableHttpClient httpClient = HttpClients.custom().setDefaultRequestConfig(config).build();
+		HttpPost httppost=new HttpPost(url);
+		if (apikey!= null){
+			httppost.addHeader("apikey", apikey);
+		}
+		if(conn!=null){
+			httppost.addHeader("conn", conn);
+		}
+		if(conn_type!=null){
+			httppost.addHeader("conn_type", conn_type);
+		}
+		UrlEncodedFormEntity entity = new UrlEncodedFormEntity(values,Consts.UTF_8);
+		httppost.setEntity(entity);
+		CloseableHttpResponse response = httpClient.execute(httppost);
+		return response;
+		
+	}
+	public  JSONObject getJson(CloseableHttpResponse resp){
+		/*将通过post方式请求的返回结果转化成json格式*/
+		JSONObject obj= new JSONObject();
+		try {
+			obj=JSONObject.fromObject(EntityUtils.toString(resp.getEntity()));
+		} catch (ParseException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return obj;
+		
+	}
+
+}
